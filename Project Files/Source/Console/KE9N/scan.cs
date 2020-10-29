@@ -491,7 +491,7 @@ namespace Thetis
                 {
                     Name = "Scanner Thread",
                     IsBackground = true,
-                    Priority = ThreadPriority.BelowNormal
+                    Priority = ThreadPriority.Normal
                 };
                 t.Start();
 

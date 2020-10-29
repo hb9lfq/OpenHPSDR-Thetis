@@ -1598,7 +1598,6 @@ namespace Thetis
         {
             // MW0LGE to do, sort out K variables, and stuff for Map overlay, some has been commented for now
             // just to get dual panafalls up and running
-
             try
             {
                 float fTopHeight;
@@ -1833,7 +1832,7 @@ namespace Thetis
                     }
                 }
 
-                //MW0LGE framerate issue, this will be true if less than desired frame rate achevied, set in RunDisplay thread of console.cs
+                //MW0LGE framrate issue, this will be true if less than desired frame rate achevied, set in RunDisplay thread of console.cs
                 if (m_bFramRateIssue) e.Graphics.FillRectangle(new SolidBrush(Color.Red), 0, 0, 8, 8);
 
                 calcFps();
@@ -1843,7 +1842,6 @@ namespace Thetis
             {
                 Common.LogException(ex);
             }
-
         }
 
         private static void UpdateDisplayPeak(float[] buffer, float[] new_data)
@@ -2266,9 +2264,6 @@ namespace Thetis
                         g.DrawLine(grid_zero_pen, mid_w - 1, 0, mid_w - 1, H);
                     }
             }
-
-
-
         }
 
         //=========================================================
@@ -4379,7 +4374,6 @@ namespace Thetis
 
         unsafe static private bool DrawPanadapter(Graphics g, int nVerticalShift, int W, int H, int rx, bool bottom)
         {
-
             if (grid_control)
             {
                 clearBackground(ref g, rx, W, H, bottom);
@@ -4477,8 +4471,6 @@ namespace Thetis
                 }
                 data = current_display_data_bottom;
             }
-
-
 
             //try
             //{
@@ -4672,6 +4664,8 @@ namespace Thetis
 
         unsafe static private bool DrawWaterfall(Graphics g, int nVerticalShift, int W, int H, int rx, bool bottom)
         {
+            //if (grid_control) clearBackground(ref g, rx, W, H, bottom);
+
             // grid draw now moved to end, so that everything can get put
             // on top of waterfall
             //if (grid_control) DrawWaterfallGrid(ref g, W, H, rx, bottom);
@@ -4915,17 +4909,10 @@ namespace Thetis
                     byte* row = null;
 
                     // first scroll image
-                    
-                    UInt32 total_size = Convert.ToUInt32(bitmapData.Stride) 
-                        * Convert.ToUInt32(bitmapData.Height);		// find buffer size
-                    UInt32 sz = (UInt32)total_size - (uint)bitmapData.Stride;
-                    int mysz = Convert.ToInt32(sz);
-                    void* iptr = new IntPtr((long)bitmapData.Scan0 + bitmapData.Stride).ToPointer();
-                    // G7KLJ fix: was new IntPtr((int) --> but overflows on  64-bit build!
-                    void* iptr2 = bitmapData.Scan0.ToPointer();
-                    Win32.memcpy(iptr,
-                        iptr2,
-                        mysz);
+                    int total_size = bitmapData.Stride * bitmapData.Height;		// find buffer size
+                    Win32.memcpy(new IntPtr((int)bitmapData.Scan0 + bitmapData.Stride).ToPointer(),
+                        bitmapData.Scan0.ToPointer(),
+                        total_size - bitmapData.Stride);
 
                     row = (byte*)bitmapData.Scan0;
 

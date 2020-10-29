@@ -28,7 +28,7 @@ warren@wpratt.com
 
 ANB GetRCVRANBPointer (int stype, int id)
 {
-	ANB a =0 ;
+	ANB a;
 	switch (stype)
 	{
 	case 0:

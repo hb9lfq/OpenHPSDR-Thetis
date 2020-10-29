@@ -162,7 +162,7 @@ namespace Thetis
         private Thread poll_ptt_thread;						// polls the PTT line on the parallel port
         private Thread poll_cw_thread;
         private Thread poll_pa_pwr_thread;					// polls the FWD and REV power if the PA is installed
-        private Thread poll_tx_inhibit_thread;
+        private Thread poll_tx_inhibit_thead;
         private Thread display_volts_amps_thead;            // calculate and display volts and amps for ANAN-8000DLE
         private Thread sql_update_thread;					// polls the RX signal strength
         private Thread rx2_sql_update_thread;				// polls the RX2 signal strength
@@ -699,7 +699,6 @@ namespace Thetis
         // ----
         private bool m_bShiftKeyDown = false;
         private static System.Timers.Timer autoStartTimer;
-        public bool failed = false;
         // ----
 
         #endregion
@@ -737,9 +736,6 @@ namespace Thetis
                     "Version error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Stop);
-                failed = true;
-                Environment.Exit(0);
-                return;
             }
             //
 
@@ -878,14 +874,8 @@ namespace Thetis
                         string version = Common.GetVerNum();
                         ArrayList a = DB.GetVars("State");
                         a.Sort();
-
                         foreach (string s in a)
                         {
-
-                            if (s == "wheel_tune_index/2")
-                            {
-                                System.Console.WriteLine(s);
-                            }
                             string[] vals = s.Split('/');
                             string name = vals[0];
                             string val = vals[1];
@@ -908,7 +898,7 @@ namespace Thetis
                                 if (DB.ImportAndMergeDatabase(autoMergeFileName, AppDataPath))
                                 {
                                     string versionName = TitleBar.GetString();
-                                    versionName = Common.VersionName();// versionName.Remove(versionName.LastIndexOf("("));  // strip off date                                    
+                                    versionName = versionName.Remove(versionName.LastIndexOf("("));  // strip off date                                    
                                     File.Delete(autoMergeFileName);
                                     DB.WriteCurrentDB(db_file_name);
                                     DB.Init();
@@ -1037,7 +1027,7 @@ namespace Thetis
             Display.specready = true;
 
             Splash.SetStatus("Initializing PortAudio");			// Set progress point
-            PortAudioForThetis.PA_Initialize();								// Initialize the audio interface
+            PA19.PA_Initialize();								// Initialize the audio interface
 
             Splash.SetStatus("Loading Main Form");				// Set progress point
             Splash.SplashForm.Owner = this;						// So that main form will show/focus when splash disappears
@@ -1061,23 +1051,23 @@ namespace Thetis
             // initialise expandedSize so that we have something as a minimum to come back to from collapsed state //MW0LGE
             expandedSize = new Size(this.Width, this.Height);
 
-            Splash.SetStatus("Initialising 60m channels ...");
             Init60mChannels();
             LoadLEDFont();
-            Splash.SetStatus("Initialising user interface ...");
             InitConsole();                                      // Initialize all forms and main variables
 
             CWFWKeyer = true;
             Splash.SetStatus("Finished");						// Set progress point
+            // Activates double buffering
 
-            // reduces flicker in display:
             this.SetStyle(ControlStyles.UserPaint |
                ControlStyles.AllPaintingInWmPaint |
                ControlStyles.OptimizedDoubleBuffer, true);
 
             this.UpdateStyles();
 
-  
+            Splash.CloseForm();									// End splash screen
+
+            // update titlebar
             this.Text = TitleBar.GetString();
             SetupForm.UpdateCustomTitle();
 
@@ -1123,7 +1113,6 @@ namespace Thetis
                 }
             }
 
-            Splash.SetStatus("Synchronising DSP ...");
             SyncDSP();
 
             foreach (string s in CmdLineArgs)
@@ -1167,7 +1156,7 @@ namespace Thetis
 
             if (resetForAutoMerge)
             {
-                MessageBox.Show("Please RE-START the application after closing this message.", "Note", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Please RE-START now.", "Note", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
@@ -1183,8 +1172,6 @@ namespace Thetis
                     }
                 }
             }
-
-            Splash.CloseForm();
         }
 
         public bool IsSetupFormNull
@@ -1236,7 +1223,7 @@ namespace Thetis
             chkPower.Checked = true;
         }
 
-        private ThreadPriority m_tpDisplayThreadPriority = ThreadPriority.Lowest; // at least using GDI, fucks up VAC audio
+        private ThreadPriority m_tpDisplayThreadPriority = ThreadPriority.Normal;
         public ThreadPriority DisplayThreadPriority
         {
             get
@@ -1380,10 +1367,6 @@ namespace Thetis
                 Application.DoEvents();
 
                 theConsole = new Console(args);
-                if (theConsole.failed)
-                {
-                    Application.Exit();
-                }
                 if (theConsole.resetForAutoMerge)
                 {
                     Application.Exit();
@@ -1837,8 +1820,7 @@ namespace Thetis
                 RX1AGCMode = AGCMode.MED;
             if (comboRX2AGC.SelectedIndex < 0)
                 comboRX2AGC.Text = "Med";
-
-            Splash.SetStatus("Loading Settings ...");
+           
             ptbPWR_Scroll(this, EventArgs.Empty);
             ptbAF_Scroll(this, EventArgs.Empty);
             ptbSquelch_Scroll(this, EventArgs.Empty);
@@ -1884,7 +1866,6 @@ namespace Thetis
             booting = false;
             chkDisplayAVG_CheckedChanged(this, EventArgs.Empty);
 
-            Splash.SetStatus("Loading more ...");
             CalcDisplayFreq();
             CalcRX2DisplayFreq();
             CpuUsage(m_bShowSystemCPUUsage);
@@ -1923,10 +1904,9 @@ namespace Thetis
             //cmaster.Getrxa(4).pDisplay.StartDisplay(4);
             //cmaster.Getrxa(5).pDisplay.StartDisplay(5);
             //cmaster.Getrxa(6).pDisplay.StartDisplay(6);
-            Splash.SetStatus("Loading Notches ...");
+
             SetupForm.RestoreNotchesFromDatabase();
 
-            Splash.SetStatus("Loading QSK ...");
             // Prepare for QSK in InitConsole
             qsk_sidetone_volume = SetupForm.TXAF;
             non_qsk_agc = RX1AGCMode;
@@ -1940,9 +1920,8 @@ namespace Thetis
             if (DumpCap.ClearFolderOnRestart) DumpCap.ClearDumpFolder();
             m_frmSeqLog.SetWireSharkPath(DumpCap.WireSharkPath);
             //--
-            Splash.SetStatus("Loading Raw Input ...");
+
             initialiseRawInput(); // MW0LGE - WIP
-            SetupForm.getOptions2();
         }
 
         private void selectFilters()
@@ -2104,7 +2083,6 @@ namespace Thetis
 
         public void ExitConsole()
         {
-            if (failed) return;
             if (n1mm_udp_client != null)
                 n1mm_udp_client.Close();
 
@@ -2121,7 +2099,7 @@ namespace Thetis
             chkPower.Checked = false;	// make sure power is off		
             ckQuickRec.Checked = false; // make sure recording is stopped
 
-            PortAudioForThetis.PA_Terminate();		// terminate audio interface
+            PA19.PA_Terminate();		// terminate audio interface
             DB.Exit();					// close and save database
             NetworkIO.DestroyRNet();
             Win32.TimeEndPeriod(1); // return to previous timing precision
@@ -20175,7 +20153,7 @@ namespace Thetis
             set
             {
                 app_data_path = value;
-                Skin.SetAppDataPath(value);
+                Skin.AppDataPath = value;
             }
         }
 
@@ -23244,7 +23222,6 @@ namespace Thetis
             get { return current_hpsdr_model; }
             set
             {
-                
                 HPSDRModel saved_hpsdr_model = current_hpsdr_model;
                 current_hpsdr_model = value;
 
@@ -25993,7 +25970,7 @@ namespace Thetis
         public string CATReadFwdPwr()
         {
             double power = 0.0;
-            //float num = 0f;
+            float num = 0f;
 
             if (alexpresent)
             {
@@ -29951,10 +29928,20 @@ namespace Thetis
             switch (current_display_engine)
             {
                 case DisplayEngine.GDI_PLUS:
+                    // e.Graphics.Clear(BackColor);
+                    //e.Graphics.CompositingMode = CompositingMode.SourceOver;
+                    //e.Graphics.CompositingQuality = CompositingQuality.Default;
+                    //e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    //e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
 
                     Display.RenderGDIPlus(ref e);
                     break;
                 case DisplayEngine.DIRECT_X:
+                    /*Thread t = new Thread(new ThreadStart(Display.RenderDirectX));
+                        t.Name = "DirectX Background Update";
+                        t.IsBackground = true;
+                        t.Priority = ThreadPriority.Normal;
+                        t.Start();*/
                     break;
             }
         }
@@ -32851,7 +32838,6 @@ namespace Thetis
 
         unsafe private void RunDisplay()
         {
-            
             try 
             { 
                 HiPerfTimer objStopWatch = new HiPerfTimer();
@@ -34292,7 +34278,7 @@ namespace Thetis
                         HandleXml(tmp);
                     }
                 }
-                catch (SocketException) // handle blocking exception
+                catch (SocketException e) // handle blocking exception
                 {
                     await Task.Delay(500);
                     continue;
@@ -36655,7 +36641,7 @@ namespace Thetis
                     sql_update_thread = new Thread(new ThreadStart(UpdateSQL))
                     {
                         Name = "Update SQL",
-                        Priority = ThreadPriority.Lowest,
+                        Priority = ThreadPriority.Normal,
                         IsBackground = true
                     };
                     sql_update_thread.Start();
@@ -36666,7 +36652,7 @@ namespace Thetis
                     noise_gate_update_thread = new Thread(new ThreadStart(UpdateNoiseGate))
                     {
                         Name = "Update NoiseGate",
-                        Priority = ThreadPriority.Lowest,
+                        Priority = ThreadPriority.Normal,
                         IsBackground = true
                     };
                     noise_gate_update_thread.Start();
@@ -36688,7 +36674,7 @@ namespace Thetis
                     poll_ptt_thread = new Thread(new ThreadStart(PollPTT))
                     {
                         Name = "Poll PTT Thread",
-                        Priority = ThreadPriority.BelowNormal,
+                        Priority = ThreadPriority.Normal,
                         IsBackground = true
                     };
                     poll_ptt_thread.Start();
@@ -36716,15 +36702,15 @@ namespace Thetis
                     poll_pa_pwr_thread.Start();
                 }
 
-                if (poll_tx_inhibit_thread == null || !poll_tx_inhibit_thread.IsAlive)
+                if (poll_tx_inhibit_thead == null || !poll_tx_inhibit_thead.IsAlive)
                 {
-                    poll_tx_inhibit_thread = new Thread(new ThreadStart(PollTXInhibit))
+                    poll_tx_inhibit_thead = new Thread(new ThreadStart(PollTXInhibit))
                     {
                         Name = "Poll TX Inhibit input Thread",
-                        Priority = ThreadPriority.BelowNormal,
+                        Priority = ThreadPriority.Normal,
                         IsBackground = true
                     };
-                    poll_tx_inhibit_thread.Start();
+                    poll_tx_inhibit_thead.Start();
                 }
 
                 if ((display_volts_amps_thead == null || !display_volts_amps_thead.IsAlive) && (current_hpsdr_model == HPSDRModel.ANAN7000D || current_hpsdr_model == HPSDRModel.ANAN8000D))
@@ -36732,7 +36718,7 @@ namespace Thetis
                     display_volts_amps_thead = new Thread(new ThreadStart(displayMKIIPAVoltsAmps))
                     {
                         Name = "Update Volts Amps Thread",
-                        Priority = ThreadPriority.BelowNormal,
+                        Priority = ThreadPriority.Normal,
                         IsBackground = true
                     };
                     display_volts_amps_thead.Start();
@@ -36880,10 +36866,10 @@ namespace Thetis
                     if (!poll_pa_pwr_thread.Join(500))
                         poll_pa_pwr_thread.Abort();
                 }
-                if (poll_tx_inhibit_thread != null)
+                if (poll_tx_inhibit_thead != null)
                 {
-                    if (!poll_tx_inhibit_thread.Join(500))
-                        poll_tx_inhibit_thread.Abort();
+                    if (!poll_tx_inhibit_thead.Join(500))
+                        poll_tx_inhibit_thead.Abort();
                 }
                 if (display_volts_amps_thead != null)
                 {
@@ -48075,7 +48061,7 @@ namespace Thetis
                             rx2_sql_update_thread = new Thread(new ThreadStart(UpdateRX2SQL))
                             {
                                 Name = "Update RX2 SQL",
-                                Priority = ThreadPriority.Lowest,
+                                Priority = ThreadPriority.Normal,
                                 IsBackground = true
                             };
                             rx2_sql_update_thread.Start();
@@ -56769,66 +56755,17 @@ namespace Thetis
             return base.ProcessDialogKey(keyData);
         }
         //--
-
-        private void DebugMissingDLL(string dllName, bool only_if_not_exist = false, string extramsg = "")
-        {
-            string cwd = Environment.CurrentDirectory;
-            if (!only_if_not_exist)
-            {
-                String msg = "Looking for " + dllName + "\n";
-                MessageBox.Show(msg + "Current working dir is:\n" + cwd);
-            }
-            
-            string dllpath = cwd + "\\" + dllName;
-            bool exists = File.Exists(dllpath);
-            if (exists)
-            {
-                if (!only_if_not_exist)
-                MessageBox.Show(dllName + " DOES exist in cwd");
-            }
-            else
-            {
-                MessageBox.Show(dllName + " DOES NOT exist in:\n" + cwd + "\n\n" + extramsg, "Thetis: Required DLL is not found.", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
         private bool checkVersions()
         {
             int nCMasterVersion = -1;
-            int nWDSPVersion = 118;
+            int nWDSPVersion = -1;
             int nPAVersion = -1;
 
             bool bRet = false;
 
-            // PortAudio.dll FIRST (since ChannelMaster depends on it)
-            try
-            {
-
-                nPAVersion = PortAudioForThetis.PA_GetVersion();
-                if (nPAVersion != Versions._PORTAUDIO_VERSION)
-                {
-                    DialogResult dr = MessageBox.Show("Incorrect version of portaudio.dll installed.",
-                    "Version error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                }
-
-            }
-            catch (Exception e)
-            {
-                DebugMissingDLL("PortAudioForThetis.dll");
-                MessageBox.Show("System error was : " + e.Message);
-                DialogResult dr = MessageBox.Show("Could not find PA_GetVersion() in portaudio.dll .\nEnsure correct version installed.",
-                    "Version function error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-            }
-
             // channelmaster.dll
             try
             {
-                DebugMissingDLL("wdsp.dll", true, "It is required in that application folder.");
-                DebugMissingDLL("libfftw3-3.dll", true, " is required in the application folder");
-                
                 nCMasterVersion = cmaster.GetCMVersion();
                 if (nCMasterVersion != Versions._CMASTER_VERSION)
                 {
@@ -56838,11 +56775,8 @@ namespace Thetis
                     MessageBoxIcon.Warning);
                 }
             }
-            catch (Exception e)
+            catch
             {
-                
-                MessageBox.Show("System error was : " + e.Message);
-                DebugMissingDLL("ChannelMaster.dll");
                 DialogResult dr = MessageBox.Show("Could not find GetCMVersion() in channelmaster.dll .\nEnsure correct version installed.",
                     "Version function error",
                     MessageBoxButtons.OK,
@@ -56850,7 +56784,7 @@ namespace Thetis
             }
 
             // wdsp.dll
-            try
+            /*try
             {
                 nWDSPVersion = WDSP.GetWDSPVersion();
                 if (nWDSPVersion != Versions._WDSP_VERSION)
@@ -56867,9 +56801,29 @@ namespace Thetis
                     "Version function error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
-            }
+            }*/
 
-          
+            // PortAudio.dll
+            try
+            {
+               // nPAVersion = PortAudio.Pa_GetVersion();
+                nPAVersion = PA19.PA_GetVersion();
+                if (nPAVersion != Versions._PORTAUDIO_VERSION)
+                {
+                    DialogResult dr = MessageBox.Show("Incorrect version of portaudio.dll installed.",
+                    "Version error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                }
+
+            }
+            catch
+            {
+                DialogResult dr = MessageBox.Show("Could not find PA_GetVersion() in portaudio.dll .\nEnsure correct version installed.",
+                    "Version function error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }            
 
             bRet = (nCMasterVersion == Versions._CMASTER_VERSION) &&
                    //(nWDSPVersion == Versions._WDSP_VERSION) &&
@@ -56917,10 +56871,6 @@ namespace Thetis
 
         }
 
-        private void picDisplay_Click(object sender, EventArgs e)
-        {
-
-        }
     }
 
     public class DigiMode

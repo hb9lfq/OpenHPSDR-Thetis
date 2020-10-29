@@ -183,9 +183,6 @@
     <ClInclude Include="dexp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="channel.c">
@@ -356,10 +353,5 @@
     <ClCompile Include="dexp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="wdsp.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
   </ItemGroup>
 </Project>

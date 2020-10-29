@@ -29,7 +29,6 @@ warren@wpratt.com
 
 #include "resample.h"
 
-
 typedef struct _aamix
 {
 	int id;										// id of this aamixer
@@ -120,7 +119,6 @@ extern void SetAAudioRingInsize (void* ptr, int id, int size);
 extern void SetAAudioRingOutsize (void* ptr, int id, int size);
 extern void SetAAudioOutRate (void* ptr, int id, int rate);
 extern void SetAAudioStreamRate (void* ptr, int id, int mixinid, int rate);
-
 
 #endif
 

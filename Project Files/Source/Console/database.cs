@@ -7890,8 +7890,7 @@ namespace Thetis
                 {
                     r = ds.Tables[tableName].Rows.Find(vals[0]);
                 }
-                catch(Exception e) {
-                    System.Diagnostics.Debug.WriteLine("Error finding Datarow" + vals[0]);
+                catch {
                 }
                 if (r != null)
                 {

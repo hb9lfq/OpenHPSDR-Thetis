@@ -83,6 +83,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="aamix.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="amix.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -150,9 +153,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="pro.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="aamix.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

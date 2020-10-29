@@ -194,8 +194,6 @@ namespace Thetis
 
             RefreshSkinList(); //moved down the initialisation order, so we at least know if we are gdi or dx, only build the list
 
-            // G7KLJ: I do not know if it's important to load this here, so I left it.
-            // But i call it again later so the TX profile does not overwrite the VAC settings
             getOptions2();
 
             selectSkin();
@@ -814,16 +812,14 @@ namespace Thetis
                 if (Audio.GetPAInputDevices(host_index).Count > 0 ||
                     Audio.GetPAOutputDevices(host_index).Count > 0)
                 {
-
-                    /*/
+                    //comboAudioDriver1.Items.Add(new PADeviceInfo(PAHostName, host_index));
                     if (PAHostName != "Windows WASAPI")
-                                        /*/
-                    // G7KLJ does not know why WASAPI is barred. There should be a comment stating why if you really mean it!
                     {
                         comboAudioDriver2.Items.Add(new PADeviceInfo(PAHostName, host_index));
                         comboAudioDriver3.Items.Add(new PADeviceInfo(PAHostName, host_index));
                     }
-
+                    // comboAudioDriver1.Items.Add(new PADeviceInfo(PAHostName, host_index));
+                    // comboAudioDriver2.Items.Add(new PADeviceInfo(PAHostName, host_index));
                 }
                 host_index++; //Increment host index
             }
@@ -909,16 +905,10 @@ namespace Thetis
 
             ControlList(this, ref temp);
 
-            foreach (Control c in temp)	
+            foreach (Control c in temp)				// For each control
             {
-
                 if (c.GetType() == typeof(CheckBoxTS))
-                {
-
-                    String entry = c.Name + "/" + ((CheckBoxTS)c).Checked.ToString();
-                    a.Add(entry);
-
-                }
+                    a.Add(c.Name + "/" + ((CheckBoxTS)c).Checked.ToString());
                 else if (c.GetType() == typeof(ComboBoxTS))
                 {
                     //if(((ComboBoxTS)c).SelectedIndex >= 0)
@@ -946,7 +936,6 @@ namespace Thetis
                     c.GetType() == typeof(TextBox) ||
                     c.GetType() == typeof(TrackBar))
                     Debug.WriteLine(this.Name + " -> " + c.Name + " needs to be converted to a Thread Safe control.");
-
 #endif
             }
 
@@ -957,7 +946,7 @@ namespace Thetis
             DB.WriteCurrentDB(console.DBFileName);
         }
 
-        public void getOptions2()
+        private void getOptions2()
         {
             //MW0LGE moved to dictionary, as control names are unique, and does away with old loop through every control to find the one we want
             Dictionary<string, Control> controls = new Dictionary<string, Control>();
@@ -978,22 +967,7 @@ namespace Thetis
                 InitADC();
             }
 
-            //MW0LGE We have overwritten controls with data that might not match the current profile
-            //load in current profile [so this code was at the end of the function --G7KLJ]
-
-            // G7KLJ VAC is saved as part of the TX profile, and this is confusing to me because,
-            // as a SWL I kept wondering why VAC state was not saved when I pressed Apply,
-            // because of course I care less about TX if I am just a listener! So I load the profile FIRST
-
-            // If the user subsequently loads another TX profile, then the profile values will prevail.
-            if (comboTXProfileName.SelectedIndex < 0 &&
-                comboTXProfileName.Items.Count > 0)
-                comboTXProfileName.SelectedIndex = 0;
-
-            if (loadTXProfile(comboTXProfileName.Text)) current_profile = comboTXProfileName.Text;
-            else current_profile = "";
-
-            foreach (string s in a)
+            foreach(string s in a)
             {
                 string[] vals = s.Split('/');
                 if (vals.Length > 2)
@@ -1085,7 +1059,14 @@ namespace Thetis
                 }
             }
 
-  
+            //MW0LGE We have overwritten controls with data that might not match the current profile
+            //load in current profile
+            if (comboTXProfileName.SelectedIndex < 0 &&
+                comboTXProfileName.Items.Count > 0)
+                comboTXProfileName.SelectedIndex = 0;
+
+            if (loadTXProfile(comboTXProfileName.Text)) current_profile = comboTXProfileName.Text;
+            else current_profile = "";
         }
 
         private string KeyToString(Keys k)
@@ -1228,7 +1209,6 @@ namespace Thetis
             EventArgs e = EventArgs.Empty;
 
             // General Tab
-            Splash.SetStatus("Loading General Tab ...");
             comboRadioModel_SelectedIndexChanged(this, e);
             udGeneralLPTDelay_ValueChanged(this, e);
             chkGeneralRXOnly_CheckedChanged(this, e);
@@ -1243,13 +1223,11 @@ namespace Thetis
             chkNetworkWDT_CheckedChanged(this, e);
             chkRadioProtocolSelect_CheckStateChanged(this, e);
 
-            Splash.SetStatus("Loading Navigation ...");
             //NAVigation-general
             ChkAlsoUseSpecificMouseWheel_CheckedChanged(this, e);
             chkClickTuneFilter_CheckedChanged(this, e);
             chkShowCTHLine_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading Audio ...");
             // Audio Tab
             comboAudioBuffer2_SelectedIndexChanged(this, e);
             comboAudioSampleRate1_SelectedIndexChanged(this, e);
@@ -1289,7 +1267,6 @@ namespace Thetis
             udTwoToneLevel_ValueChanged(this, e);
 
             // Display Tab
-            Splash.SetStatus("Loading Display ...");
             udDisplayGridMax_ValueChanged(this, e);
             udDisplayGridMin_ValueChanged(this, e);
             udDisplayGridStep_ValueChanged(this, e);
@@ -1340,7 +1317,6 @@ namespace Thetis
             setQSOTimerDuration();
             chkQSOTimerResetOnExpiry_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading DSP ...");
             // DSP Tab
             udLMSANF_ValueChanged(this, e);
             udLMSNR_ValueChanged(this, e);
@@ -1365,7 +1341,6 @@ namespace Thetis
             radANF2PreAGC_CheckedChanged(this, e);
             chkMNFAutoIncrease_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading AGC...");
             //AGC
             udDSPAGCFixedGaindB_ValueChanged(this, e);
             udDSPAGCMaxGaindB_ValueChanged(this, e);
@@ -1390,7 +1365,6 @@ namespace Thetis
             udDSPALCMaximumGain_ValueChanged(this, e);
             udDSPALCDecay_ValueChanged(this, e);
 
-            Splash.SetStatus("Loading AM ...");
             // AM/SAM Tab
             chkLevelFades_CheckedChanged(this, e);
             chkRX2LevelFades_CheckedChanged(this, e);
@@ -1404,12 +1378,10 @@ namespace Thetis
             chkRX2CBlock_CheckedChanged(this, e);
             radTXDSB_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading FM ...");
             // FM Tab
             chkEmphPos_CheckedChanged(this, e);
             chkRemoveTone_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading EER ...");
             // EER Tab
             chkDSPEERon_CheckedChanged(this, e);
             udDSPEERmgain_ValueChanged(this, e);
@@ -1421,7 +1393,6 @@ namespace Thetis
             udDSPEERpwmMax_ValueChanged(this, e);
             udDSPEERpwmMin_ValueChanged(this, e);
 
-            Splash.SetStatus("Loading NR ...");
             // NR Tab
             radDSPNR2Linear_CheckedChanged(this, e);
             radDSPNR2Log_CheckedChanged(this, e);
@@ -1434,7 +1405,6 @@ namespace Thetis
             radDSPNR2MMSERX2_CheckedChanged(this, e);
             chkDSPNR2AERX2_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading TX ...");
             // Transmit Tab
             udTXFilterHigh_ValueChanged(this, e);
             udTXFilterLow_ValueChanged(this, e);
@@ -1452,7 +1422,6 @@ namespace Thetis
             chkSaveTXProfileOnExit_CheckedChanged(this, e); 
             ForceTXProfileUpdate();
 
-            Splash.SetStatus("Loading Keyboard ...");
             // Keyboard Tab
             comboKBTuneUp1_SelectedIndexChanged(this, e);
             comboKBTuneUp2_SelectedIndexChanged(this, e);
@@ -1477,7 +1446,6 @@ namespace Thetis
             comboKBPTTTx_SelectedIndexChanged(this, e);
             comboKBPTTRx_SelectedIndexChanged(this, e);
 
-            Splash.SetStatus("Loading Appearance...");
             // Appearance Tab
             clrbtnBtnSel_Changed(this, e);
             clrbtnVFODark_Changed(this, e);
@@ -1538,7 +1506,6 @@ namespace Thetis
             comboAppSkin_SelectedIndexChanged(this, e); 
             chkDisablePicDisplayBackgroundImage_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading RX2 ...");
             // RX2 tab
             chkRX2AutoMuteTX_CheckedChanged(this, e);
             udMoxDelay_ValueChanged(this, e);
@@ -1547,7 +1514,6 @@ namespace Thetis
             // PS 
             console.psform.ForcePS();
 
-            Splash.SetStatus("Loading APF...");
             // APF
             chkDSPRX1APFEnable_CheckedChanged(this, e);
             chkDSPRX1subAPFEnable_CheckedChanged(this, e);
@@ -1565,7 +1531,6 @@ namespace Thetis
             radDSPRX1subAPFControls_CheckedChanged(this, e);
             radDSPRX2APFControls_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading Dolly ...");
             // dolly filter
             chkDSPRX1DollyEnable_CheckedChanged(this, e);
             chkDSPRX1DollySubEnable_CheckedChanged(this, e);
@@ -1588,7 +1553,6 @@ namespace Thetis
             chkMNFAutoIncrease_CheckedChanged(this, e);
 			chkEnableXVTRHF_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading CFC ...");
             // CFCompressor
             chkCFCEnable_CheckedChanged(this, e);
             setCFCProfile(this, e);
@@ -1596,7 +1560,6 @@ namespace Thetis
             chkCFCPeqEnable_CheckedChanged(this, e);
             tbCFCPEG_Scroll(this, e);
 
-            Splash.SetStatus("Loading Phase Rotator...");
             // Phase Rotator
             chkPHROTEnable_CheckedChanged(this, e);
             udPhRotFreq_ValueChanged(this, e);
@@ -1610,7 +1573,6 @@ namespace Thetis
             radP1DDCADC_CheckedChanged(this, e);
             chkWheelReverse_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading VAC ...");
             // IVAC
             chkVAC1_Force_CheckedChanged(this, e);
             chkVAC1_Force2_CheckedChanged(this, e);
@@ -1618,7 +1580,6 @@ namespace Thetis
             chkAudioEnableVAC_CheckedChanged(this, e);
             chkVAC2Enable_CheckedChanged(this, e);
 
-            Splash.SetStatus("Loading DEXP-VOX ...");
             // DEXP-VOX
             chkVOXEnable_CheckedChanged(this, e);
             chkDEXPEnable_CheckedChanged(this, e);
@@ -5777,7 +5738,7 @@ namespace Thetis
             set { tcAudio = value; }
         }
 
-       
+
 
         #endregion
 
@@ -6360,7 +6321,7 @@ namespace Thetis
         private void comboAudioDriver2_SelectedIndexChanged(object sender, System.EventArgs e)
         {
             if (comboAudioDriver2.SelectedIndex < 0) return;
-            
+
             int old_driver = Audio.Host2;
             int new_driver = ((PADeviceInfo)comboAudioDriver2.SelectedItem).Index;
             bool power = console.PowerOn;
@@ -11034,7 +10995,7 @@ namespace Thetis
             {
                 Name = "Apply Options Thread",
                 IsBackground = true,
-                Priority = ThreadPriority.Lowest
+                Priority = ThreadPriority.Normal
             };
             m_objSaveLoadThread.Start();
         }
@@ -19396,7 +19357,6 @@ namespace Thetis
                 console.PowerOn = false;
                 Thread.Sleep(100);
             }
-            Common.RadioModel = console.CurrentHPSDRModel;
             cmaster.CMLoadRouterAll(console.CurrentHPSDRModel);
 
             if (power && (old_model != console.CurrentHPSDRModel))
