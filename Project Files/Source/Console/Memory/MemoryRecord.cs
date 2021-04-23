@@ -318,7 +318,8 @@ namespace Thetis
             }
         }
 
-        private string tune_step = "10Hz";
+        // HB9LFQ changed to 100Hz
+        private string tune_step = "100Hz";
         public string TuneStep
         {
             get { return tune_step; }
