@@ -1705,7 +1705,7 @@ namespace Thetis
                 new TuneStep(10000000, "10MHz")
             };  // initialize wheel tuning list array
 
-            tune_step_index = 2;
+            tune_step_index = 5;
 
             meter_text_history = new float[multimeter_text_peak_samples];
 
